@@ -31,7 +31,7 @@ defineProps({
         <b>{{ price }}</b>
       </div>
 
-      <img @click="onCliclAdd" :src="!isAdded ? '/plus.svg' : '/checked.svg'" alt="Plus" />
+      <img @click="onClickAdd" :src="!isAdded ? '/plus.svg' : '/checked.svg'" alt="Plus" />
     </div>
   </div>
 </template>
