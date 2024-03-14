@@ -1,14 +1,37 @@
 <script setup>
+import { ref, computed, inject } from 'vue'
+import axios from 'axios'
 import DrawerHead from './DrawerHead.vue'
 import CartItemList from './CartItemList.vue'
 import InfoBlock from './InfoBlock.vue'
 
-const emit = defineEmits(['createOrder'])
-defineProps({
+const props = defineProps({
   totalPrice: Number,
   vatPrice: Number,
   buttonDisabled: Boolean
 })
+const { cart, closeDrawer } = inject('cart')
+
+const isCreating = ref(false)
+const orderId = ref(null)
+
+const createOrder = async () => {
+  try {
+    isCreating.value = true
+    const { data } = await axios.post(`https://e8fbbfbfb79ac194.mokky.dev/orders`, {
+      items: cart.value,
+      totalPrice: props.totalPrice.value
+    })
+    cart.value = []
+    orderId.value = data.id
+  } catch (e) {
+    console.log(e)
+  } finally {
+    isCreating.value = false
+  }
+}
+const cartIsEmpty = computed(() => cart.value.length === 0)
+const buttonDisabled = computed(() => isCreating.value || cartIsEmpty.value)
 </script>
 
 <template>
@@ -16,11 +39,18 @@ defineProps({
   <div class="bg-white w-96 h-full fixed right-0 top-0 z-20 p-8">
     <DrawerHead />
 
-    <div v-if="!totalPrice" class="flex h-full items-center">
+    <div v-if="!totalPrice || orderId" class="flex h-full items-center">
       <InfoBlock
+        v-if="!totalPrice && !orderId"
         title="Корзинка пустая"
         description="Добавьте хотя бы одну пару кроссовок , чтобы сделать заказ."
         imageUrl="/package-icon.png"
+      />
+      <InfoBlock
+        v-if="orderId"
+        title="Заказ оформлен"
+        :description="`Ваш заказ #${orderId} скоро будет передан курьерской доставке`"
+        imageUrl="/order-success-icon.png"
       />
     </div>
 
@@ -40,7 +70,7 @@ defineProps({
         </div>
         <button
           :disabled="buttonDisabled"
-          @click="() => emit('createOrder')"
+          @click="createOrder"
           class="mt-4 bg-lime-500 w-full rounded-xl py-3 text-white disabled:bg-slate-300 hover:bg-lime-600 transition active:bg-lime-700"
         >
           Оформить заказ
